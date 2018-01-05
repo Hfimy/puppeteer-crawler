@@ -4,8 +4,14 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint .",
+    "fix": "eslint --fix ."
   },
+  "pre-commit": [
+    "fix",
+    "lint"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Hfimy/puppeteer-crawler.git"
@@ -18,5 +24,9 @@
   "homepage": "https://github.com/Hfimy/puppeteer-crawler#readme",
   "dependencies": {
     "puppeteer": "^0.13.0"
+  },
+  "devDependencies": {
+    "babel-eslint": "^8.1.2",
+    "eslint": "^4.14.0"
   }
 }

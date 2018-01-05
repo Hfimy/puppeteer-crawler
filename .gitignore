@@ -60,6 +60,6 @@ typings/
 # 不上传screenshot和image目录下的图片，因为git不会上传空目录，所以可以在该目录下添加一个.gitkeeper
 screenshot/*.png
 image/*.png
-image/*.jgp 
+image/*.jpg
 image/*.jpeg 
 image/*.gif
