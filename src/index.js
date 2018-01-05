@@ -7,7 +7,7 @@ const srcToImg = require('./helper/srcToImg');
     try {
         const browser = await puppeteer.launch(); //默认是无界面
         // const browser = await puppeteer.launch({ headless: false });
-
+        console.log('open browser, waiting...');//eslint-disable-line
         const page = await browser.newPage();
         await page.goto('https://image.baidu.com/');
 
@@ -18,7 +18,7 @@ const srcToImg = require('./helper/srcToImg');
         // 导出pdf仅在无界面模式下可以实现
         await page.pdf({
             path: `${screenshot}/${Date.now()}.pdf`,
-            format:'A4'
+            format: 'A4'
         });
         await page.setViewport({
             width: 1920,
@@ -53,10 +53,20 @@ const srcToImg = require('./helper/srcToImg');
             //     console.log('fetch end,start next')
             // })
 
+            let concurrent = 0;//当前并发数
             for (let i = 0; i < srcs.length; i++) {
-                await srcToImg(srcs[i], image);
-                await page.waitFor(200);
+                srcToImg(srcs[i], image);
+                concurrent++;
+                //控制并发数
+                if (concurrent === 10) {
+                    await page.waitFor(200);
+                    concurrent = 0;
+                }
             }
+            // for (let i = 0; i < srcs.length; i++) {
+            //     await srcToImg(srcs[i], image);
+            //     await page.waitFor(200);
+            // }
 
             //并发控制，事实证明这种写法无效，一旦resolve则下面的请求也会被rejected
             // let count = 0;

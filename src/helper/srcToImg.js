@@ -7,19 +7,15 @@ const writeFile = promisify(fs.writeFile);
 
 module.exports = async (src, dir) => {
     if (/\.(jpg|jpeg|png|gif)$/.test(src)) {
-        //eslint-disable-next-line no-console
-        console.log(src);
-
         await urlToImg(src, dir);
     } else {
-        //eslint-disable-next-line no-console
-        console.log('base64格式图片');
         await base64ToImg(src, dir);
     }
 };
 
 //url=>image
 const urlToImg = promisify((url, dir, cb) => {
+    console.log(url);//eslint-disable-line
     const mode = /^https:/.test(url) ? https : http;
     const ext = path.extname(url);
     const file = path.join(dir, `${Date.now()}${ext}`);
@@ -56,6 +52,7 @@ const urlToImg = promisify((url, dir, cb) => {
 
 //base64=>image
 const base64ToImg = async (url, dir) => {
+    console.log('base64图片编码');  //eslint-disable-line
     //date:image/png;base64,....
     const matches = url.match(/^data:(.+?);base64,(.+)$/); //. 除换行符外的任意一个单字符  + 匹配一个或多个  ? 匹配零个或一个,非贪婪匹配
 
