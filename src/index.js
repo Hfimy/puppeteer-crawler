@@ -1,3 +1,4 @@
+//eslint-disable
 const puppeteer = require('puppeteer');
 //eslint-disable-next-line
 const { screenshot, image } = require('./config/default');
@@ -5,8 +6,8 @@ const srcToImg = require('./helper/srcToImg');
 
 (async () => {
     try {
-        const browser = await puppeteer.launch(); //默认是无界面
-        // const browser = await puppeteer.launch({ headless: false });
+        // const browser = await puppeteer.launch(); //默认是无界面
+        const browser = await puppeteer.launch({ headless: false });
         console.log('open browser, waiting...');//eslint-disable-line
         const page = await browser.newPage();
         await page.goto('https://image.baidu.com/');
@@ -16,14 +17,14 @@ const srcToImg = require('./helper/srcToImg');
             path: `${screenshot}/${Date.now()}.png`
         });
         // 导出pdf仅在无界面模式下可以实现
-        await page.pdf({
-            path: `${screenshot}/${Date.now()}.pdf`,
-            format: 'A4'
-        });
-        await page.setViewport({
-            width: 1920,
-            height: 1080
-        });
+        // await page.pdf({
+        //     path: `${screenshot}/${Date.now()}.pdf`,
+        //     format: 'A4'
+        // });
+        // await page.setViewport({
+        //     width: 1920,
+        //     height: 1080
+        // });
 
         await page.focus('#kw');
 
@@ -44,7 +45,7 @@ const srcToImg = require('./helper/srcToImg');
             //     return Array.prototype.map.call(images, image => image.src)
             //     // return Array.from(images).map(image=>image.src)
             // })
-            const srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
+            let srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
 
             //此处注意，await只能用在使用async声明的函数，而下面的写法无法生效，可能因为map只能接受同步函数参数
             // srcs.map(async (src) => {
@@ -53,16 +54,49 @@ const srcToImg = require('./helper/srcToImg');
             //     console.log('fetch end,start next')
             // })
 
-            let concurrent = 0;//当前并发数
-            for (let i = 0; i < srcs.length; i++) {
-                srcToImg(srcs[i], image);
+            let concurrent = 0, index = 0, total = srcs.length;//当前并发数、已抓取数量、抓取总数
+            for (; index < total; index++) {
+                srcToImg(srcs[index], image);
                 concurrent++;
                 //控制并发数
-                if (concurrent === 10) {
-                    await page.waitFor(200);
+                if (concurrent === 50) {
+                    await page.waitFor(1000);
                     concurrent = 0;
                 }
             }
+
+            await page.evaluate(() => {
+                // alert(Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop))
+                // alert(document.documentElement.scrollHeight)
+                if (Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop) < document.documentElement.scrollHeight) {
+                    window.scrollBy(0, document.documentElement.clientHeight);
+                    // srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
+                }
+            });
+            await page.waitFor(1000);
+            await page.evaluate(() => {
+                // alert(Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop))
+                // alert(document.documentElement.scrollHeight)
+                if (Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop) < document.documentElement.scrollHeight) {
+                    window.scrollBy(0, document.documentElement.clientHeight);
+                    // srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
+                }
+            });
+            await page.waitFor(1000);
+            await page.evaluate(() => {
+                // alert(Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop))
+                // alert(document.documentElement.scrollHeight)
+                if (Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop) < document.documentElement.scrollHeight) {
+                    window.scrollBy(0, document.documentElement.clientHeight);
+                    // srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
+                }
+            });
+            await page.waitFor(1000);
+
+
+
+
+
             // for (let i = 0; i < srcs.length; i++) {
             //     await srcToImg(srcs[i], image);
             //     await page.waitFor(200);
@@ -88,10 +122,8 @@ const srcToImg = require('./helper/srcToImg');
             //     await page.waitFor(4000);
             //     console.log('next 5')
             // }
-
-
             //关闭浏览器
-            await browser.close();
+            // await browser.close();
         });
     } catch (e) {
         //eslint-disable-next-line no-console
@@ -99,3 +131,4 @@ const srcToImg = require('./helper/srcToImg');
     }
 
 })();
+//eslint-enable
