@@ -1,0 +1,22 @@
+{
+  "name": "puppeteer-crawler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hfimy/puppeteer-crawler.git"
+  },
+  "author": "hfimy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Hfimy/puppeteer-crawler/issues"
+  },
+  "homepage": "https://github.com/Hfimy/puppeteer-crawler#readme",
+  "dependencies": {
+    "puppeteer": "^0.13.0"
+  }
+}
