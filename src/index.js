@@ -1,4 +1,4 @@
-//eslint-disable
+/*eslint-disable*/
 const puppeteer = require('puppeteer');
 //eslint-disable-next-line
 const { screenshot, image } = require('./config/default');
@@ -7,7 +7,10 @@ const srcToImg = require('./helper/srcToImg');
 (async () => {
     try {
         // const browser = await puppeteer.launch(); //默认是无界面
-        const browser = await puppeteer.launch({ headless: false });
+        const browser = await puppeteer.launch({
+            headless: false,
+            // executablePath: path.resolve()
+        });
         console.log('open browser, waiting...');//eslint-disable-line
         const page = await browser.newPage();
         await page.goto('https://image.baidu.com/');
@@ -39,13 +42,13 @@ const srcToImg = require('./helper/srcToImg');
         page.on('load', async () => {
             //eslint-disable-next-line no-console
             console.log('page is loaded, start fetch ...');
-
+            let isLoaded = false
             // const srcs = await page.evaluate(() => {
             //     const images = document.querySelectorAll('img.main_img');
             //     return Array.prototype.map.call(images, image => image.src)
             //     // return Array.from(images).map(image=>image.src)
             // })
-            let srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
+            let srcs, total = 0, index = 0;//资源列表，总数，已抓取数量
 
             //此处注意，await只能用在使用async声明的函数，而下面的写法无法生效，可能因为map只能接受同步函数参数
             // srcs.map(async (src) => {
@@ -54,48 +57,70 @@ const srcToImg = require('./helper/srcToImg');
             //     console.log('fetch end,start next')
             // })
 
-            let concurrent = 0, index = 0, total = srcs.length;//当前并发数、已抓取数量、抓取总数
-            for (; index < total; index++) {
-                srcToImg(srcs[index], image);
-                concurrent++;
-                //控制并发数
-                if (concurrent === 50) {
-                    await page.waitFor(1000);
-                    concurrent = 0;
+            //抓取当前资源列表
+            const fetchImg = async () => {
+                srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
+                total = srcs.length;
+                console.log('页面可抓取数量', total)
+                for (let concurrent = 0; index < total;) {
+                    srcToImg(srcs[index], image, index + 1);
+                    concurrent++;
+                    index++;
+                    //控制并发数
+                    if (concurrent === 10) {
+                        console.log('waiting 200ms');
+                        await page.waitFor(200);
+                        concurrent = 0;
+                    }
                 }
             }
+            //下拉页面加载
+            const scroll = async () => {
+                //注意，这里面不能操作外面的变量
+                isLoaded = await page.evaluate(() => {
+                    if (Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop) < document.documentElement.scrollHeight) {
+                        window.scrollBy(0, document.documentElement.clientHeight);
+                        return false;
+                    } else {
+                        return true;
+                    }
+                });
+                await page.waitFor(1000);
+            }
 
-            await page.evaluate(() => {
-                // alert(Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop))
-                // alert(document.documentElement.scrollHeight)
-                if (Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop) < document.documentElement.scrollHeight) {
-                    window.scrollBy(0, document.documentElement.clientHeight);
-                    // srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
+            const fetchOnce = async () => {
+                //一轮抓取
+                await fetchImg()
+                //一轮滚动条下拉
+                await scroll()
+                console.log('下拉加载');
+            }
+
+            const fetchAll = async (n) => {
+                console.log(`目标值 >${n}`)
+
+                while (total < n) {
+                    await fetchOnce()
+                    console.log('已抓取数量', total);
+
+                    if (isLoaded) {
+                        console.log('重复下拉')
+                        await page.waitFor(1000);
+                        await scroll();
+                        if (isLoaded) {
+                            console.log('页面已经到底了~')
+                            break;
+                        }
+                    }
+
                 }
-            });
-            await page.waitFor(1000);
-            await page.evaluate(() => {
-                // alert(Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop))
-                // alert(document.documentElement.scrollHeight)
-                if (Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop) < document.documentElement.scrollHeight) {
-                    window.scrollBy(0, document.documentElement.clientHeight);
-                    // srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
-                }
-            });
-            await page.waitFor(1000);
-            await page.evaluate(() => {
-                // alert(Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop))
-                // alert(document.documentElement.scrollHeight)
-                if (Math.ceil(document.documentElement.clientHeight + document.documentElement.scrollTop) < document.documentElement.scrollHeight) {
-                    window.scrollBy(0, document.documentElement.clientHeight);
-                    // srcs = await page.$$eval('img.main_img', images => Array.from(images).map(image => image.src));
-                }
-            });
-            await page.waitFor(1000);
 
+                console.log(`抓取结束，共抓取${total}条`)
+                await browser.close();
 
+            }
 
-
+            await fetchAll(200);//抓取100条数据
 
             // for (let i = 0; i < srcs.length; i++) {
             //     await srcToImg(srcs[i], image);
@@ -131,4 +156,4 @@ const srcToImg = require('./helper/srcToImg');
     }
 
 })();
-//eslint-enable
+/*eslint-enable*/
